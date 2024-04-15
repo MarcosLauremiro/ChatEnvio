@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
-import { Input, Button, Menu, Dropdown, message } from "antd";
+import { Input, Button, Menu, Dropdown, message, Modal, Form } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 import "./styles.scss";
 import ChatMessage, { ChatMessageProps } from "../components/ChatMessage";
@@ -9,11 +9,28 @@ import { useDispatch } from "react-redux";
 import { initialFetchMessages } from "../store/routines/messages";
 import { chatService } from "../api";
 import { chatActions } from "../store/features/messages";
+import GroupModal from "../components/GroupModal";
 
 export default function ChatRoom() {
   const [messageText, setMessageText] = useState("");
-  const { messages, randomName } = useChat();
+  const [currentGroup, setCurrentGroup] = useState("1");
+  const [isChangeGroupModalOpen, setIsChangeGroupModalOpen] = useState(false);
+  const { messages } = useChat();
   const dispatch = useDispatch();
+  const userName = localStorage.getItem("userName") || "Unknown User";
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [groupName, setGroupName] = useState("Grupo 1");
+  const [isEditGroupNameModalOpen, setIsEditGroupNameModalOpen] =
+    useState(false);
+  const [groupNames, setGroupNames] = useState([
+    "Grupo 1",
+    "Grupo 2",
+    "Grupo 3",
+    "Grupo 4",
+  ]);
+  const [isExitConfirmModalOpen, setIsExitConfirmModalOpen] = useState(false);
+  const [userGroups, setUserGroups] = useState(["1", "2", "3", "4"]);
 
   // TODO
   /**
@@ -26,12 +43,18 @@ export default function ChatRoom() {
    * garantindo um desempenho superior à medida que a aplicação cresce em escala.
    */
 
-  // const [messages, setMessages] = useState<Array<ChatMessageProps>>([]);
   const dummy = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000");
+    setSocket(socket);
+    return () => {
+      socket.close();
+    };
+  }, [currentGroup]);
 
+  useEffect(() => {
+    if (!socket) return;
     const heartbeat = () => {
       if (!socket) return;
       if (socket.readyState !== 1) return;
@@ -43,20 +66,11 @@ export default function ChatRoom() {
       heartbeat();
       message.success("Seu chat está conectado! ✅");
     };
+
     const listener = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
-      // TODO addNewMessage
-      /**
-       *
-       * É hora de sintonizar os eventos no WebSocket!
-       * Implemente uma lógica de listener para capturar os eventos enviados pelo backend,
-       * adicionando as mensagens ao chat em tempo real. Essa implementação garantirá uma
-       * experiência dinâmica e instantânea, permitindo que as mensagens sejam exibidas no
-       * chat assim que forem recebidas do backend.
-       *
-       */
-      if (data.type === "heartbeat" || data.message.senderName === randomName)
-        return;
+      if (data.type === "heartbeat" || data.message.senderName === userName)
+        if (data.message.groupId === currentGroup) return;
       dispatch(chatActions.add({ ...data.message, fromMe: false }));
     };
 
@@ -69,9 +83,28 @@ export default function ChatRoom() {
     };
 
     return () => {
-      socket?.close();
+      socket.removeEventListener("message", listener);
     };
-  }, [randomName]);
+  }, [socket, userName, currentGroup]);
+
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:3000");
+    setSocket(socket);
+    return () => {
+      socket.close();
+    };
+  }, [currentGroup]);
+
+  //     // TODO addNewMessage
+  //     /**
+  //      *
+  //      * É hora de sintonizar os eventos no WebSocket!
+  //      * Implemente uma lógica de listener para capturar os eventos enviados pelo backend,
+  //      * adicionando as mensagens ao chat em tempo real. Essa implementação garantirá uma
+  //      * experiência dinâmica e instantânea, permitindo que as mensagens sejam exibidas no
+  //      * chat assim que forem recebidas do backend.
+  //      *
+  //      */
 
   useEffect(() => {
     if (dummy.current) {
@@ -80,7 +113,7 @@ export default function ChatRoom() {
   }, [messages]);
 
   useEffect(() => {
-    dispatch(initialFetchMessages());
+    dispatch(initialFetchMessages() as any);
   }, []);
 
   const handleMessageOnChange = (
@@ -106,8 +139,9 @@ export default function ChatRoom() {
        */
       const data: ChatMessageProps = {
         fromMe: true,
-        senderName: randomName,
+        senderName: userName,
         text: messageText,
+        groupId: currentGroup,
       };
 
       const res = await chatService.sendMessage(data);
@@ -119,15 +153,62 @@ export default function ChatRoom() {
     }
   };
 
+  const handleChangeGroupClick = () => {
+    setIsChangeGroupModalOpen(true);
+  };
+
+  const handleGroupSelect = (groupId: string) => {
+    setCurrentGroup(groupId);
+    setIsChangeGroupModalOpen(false);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(event.target.value);
+  };
+
+  const handleGroupNameChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setGroupName(event.target.value);
+  };
+
+  const handleEditGroupNameClick = () => {
+    setGroupName(groupNames[Number(currentGroup) - 1]);
+    setIsEditGroupNameModalOpen(true);
+  };
+
+  const handleEditGroupNameOk = () => {
+    const newGroupNames = [...groupNames];
+    newGroupNames[Number(currentGroup) - 1] = groupName;
+    setGroupNames(newGroupNames);
+    setIsEditGroupNameModalOpen(false);
+  };
+
+  const handleEditGroupNameCancel = () => {
+    setIsEditGroupNameModalOpen(false);
+  };
+
+  const handleExitGroupClick = () => {
+    setIsExitConfirmModalOpen(true);
+  };
+
+  const handleExitConfirm = () => {
+    setUserGroups(userGroups.filter((groupId) => groupId !== currentGroup));
+    setIsExitConfirmModalOpen(false);
+  };
+
   const menu = (
     <Menu>
-      <Menu.Item key="1" onClick={() => {}}>
+      <Menu.Item key="1" onClick={handleEditGroupNameClick}>
         Edit group name
       </Menu.Item>
-      <Menu.Item key="2" onClick={() => {}}>
+      <Menu.Item key="2" onClick={handleEditGroupNameClick}>
         Change group icon
       </Menu.Item>
-      <Menu.Item key="4" onClick={() => {}}>
+      <Menu.Item key="3" onClick={handleChangeGroupClick}>
+        Change group
+      </Menu.Item>
+      <Menu.Item key="4" onClick={handleExitGroupClick}>
         Exit group
       </Menu.Item>
     </Menu>
@@ -135,43 +216,86 @@ export default function ChatRoom() {
 
   return (
     <>
+      <GroupModal
+        currentGroup={currentGroup}
+        onSelectGroup={handleGroupSelect}
+        onClose={() => setIsChangeGroupModalOpen(false)}
+        visible={isChangeGroupModalOpen}
+        groupNames={groupNames}
+      />
+      <Modal
+        title="Editar nome do grupo"
+        visible={isEditGroupNameModalOpen}
+        onOk={handleEditGroupNameOk}
+        onCancel={handleEditGroupNameCancel}
+      >
+        <Form>
+          <Form.Item label="Nome do grupo">
+            <Input value={groupName} onChange={handleGroupNameChange} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Confirm Exit"
+        visible={isExitConfirmModalOpen}
+        onOk={handleExitConfirm}
+        onCancel={handleExitConfirm}
+      >
+        Tem certeza que quer sair do grupo?
+      </Modal>
       <div className="chat-container">
         <div className="chat-container__background">
           <header style={{ display: "flex", justifyContent: "space-between" }}>
-            <div className="image">Fake</div>
+            <div className="image">{groupNames[Number(currentGroup) - 1]}</div>
             <Dropdown.Button
               style={{ width: 50 }}
               overlay={menu}
               icon={<MoreOutlined style={{ fontSize: "1.65rem" }} />}
             />
           </header>
+          <Input
+            type="text"
+            placeholder="Search messages"
+            value={searchText}
+            onChange={handleSearchChange}
+          />
           <main>
             <div>
-              {messages.map((msg, index) => {
-                const { senderName, text, createdAt } = msg;
-                return (
-                  <ChatMessage
-                    key={index}
-                    fromMe={senderName === randomName}
-                    senderName={senderName === randomName ? "Eu" : senderName}
-                    text={text}
-                    createdAt={createdAt}
-                  />
-                );
-              })}
+              {messages
+                .filter(
+                  (msg) =>
+                    msg.groupId === currentGroup &&
+                    msg.text.includes(searchText)
+                )
+                .map((msg, index) => {
+                  return (
+                    <ChatMessage
+                      key={index}
+                      fromMe={msg.senderName === userName}
+                      senderName={
+                        msg.senderName === userName ? "Eu" : msg.senderName
+                      }
+                      text={msg.text}
+                      createdAt={msg.createdAt}
+                      groupId={msg.groupId}
+                    />
+                  );
+                })}
               <div ref={dummy} />
             </div>
           </main>
           <footer>
-            <form onSubmit={(e) => e.preventDefault()}>
-              <Input
-                type="text"
-                value={messageText}
-                placeholder="Type a message"
-                onChange={handleMessageOnChange}
-              />
-              <Button onClick={handleCreateMessage}>Send message</Button>
-            </form>
+            {userGroups.includes(currentGroup) && (
+              <form onSubmit={(e) => e.preventDefault()}>
+                <Input
+                  type="text"
+                  value={messageText}
+                  placeholder="Type a message"
+                  onChange={handleMessageOnChange}
+                />
+                <Button onClick={handleCreateMessage}>Send message</Button>
+              </form>
+            )}
           </footer>
         </div>
       </div>

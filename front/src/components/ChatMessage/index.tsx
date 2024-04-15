@@ -1,14 +1,16 @@
 import "./styles.scss";
 
 export interface ChatMessageProps {
+
   text: string;
   fromMe: boolean;
   senderName: string;
   createdAt?: Date;
+  groupId: string;
 }
 
 export default function ChatMessage(props: ChatMessageProps) {
-  const { text, createdAt, senderName, fromMe } = props;
+  const { text, createdAt, senderName, fromMe, groupId} = props;
 
   /**
    * TODO
