@@ -79,10 +79,23 @@
       > form {
         display: flex;
         position: absolute;
+        gap: 8px;
         top: 50%;
         right: 16px;
         left: 16px;
         transform: translateY(-50%);
+        .btn__message{
+          height: 35px;
+          width: 35px;
+          border: none;
+          background-color: #007bff;
+          color: #fff;
+          border-radius: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
       }
     }
   }

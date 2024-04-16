@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
-import { Input, Button, Menu, Dropdown, message, Modal, Form } from "antd";
+import { Input, Menu, Dropdown, message, Modal, Form } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 import "./styles.scss";
 import ChatMessage, { ChatMessageProps } from "../components/ChatMessage";
@@ -10,6 +10,8 @@ import { initialFetchMessages } from "../store/routines/messages";
 import { chatService } from "../api";
 import { chatActions } from "../store/features/messages";
 import GroupModal from "../components/GroupModal";
+import { SearchInput } from "../components/SerchInput";
+import { CiLocationArrow1 } from "react-icons/ci";
 
 export default function ChatRoom() {
   const [messageText, setMessageText] = useState("");
@@ -162,10 +164,6 @@ export default function ChatRoom() {
     setIsChangeGroupModalOpen(false);
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchText(event.target.value);
-  };
-
   const handleGroupNameChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -197,6 +195,18 @@ export default function ChatRoom() {
     setIsExitConfirmModalOpen(false);
   };
 
+  const handleExitCancel = () => {
+    setIsExitConfirmModalOpen(false);
+  };
+
+  const handleKeyPress = (event: any) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (messageText.trim()) {
+        handleCreateMessage(event);
+      }
+    }
+  };
   const menu = (
     <Menu>
       <Menu.Item key="1" onClick={handleEditGroupNameClick}>
@@ -239,9 +249,10 @@ export default function ChatRoom() {
         title="Confirm Exit"
         visible={isExitConfirmModalOpen}
         onOk={handleExitConfirm}
-        onCancel={handleExitConfirm}
+        onCancel={handleExitCancel}
+        closable={true}
       >
-        Tem certeza que quer sair do grupo?
+        Are you sure you want to leave the group?
       </Modal>
       <div className="chat-container">
         <div className="chat-container__background">
@@ -253,12 +264,7 @@ export default function ChatRoom() {
               icon={<MoreOutlined style={{ fontSize: "1.65rem" }} />}
             />
           </header>
-          <Input
-            type="text"
-            placeholder="Search messages"
-            value={searchText}
-            onChange={handleSearchChange}
-          />
+          <SearchInput searchText={searchText} setSearchText={setSearchText} />
           <main>
             <div>
               {messages
@@ -292,8 +298,11 @@ export default function ChatRoom() {
                   value={messageText}
                   placeholder="Type a message"
                   onChange={handleMessageOnChange}
+                  onPressEnter={handleKeyPress}
                 />
-                <Button onClick={handleCreateMessage}>Send message</Button>
+                <button className="btn__message" onClick={handleCreateMessage}>
+                  <CiLocationArrow1 size={24} />
+                </button>
               </form>
             )}
           </footer>
