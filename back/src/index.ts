@@ -70,10 +70,18 @@ const messages: ChatMessageProps[] = [
   },
 ];
 app.get("/message", async (_: Request, res: Response) => {
-  const message = await db.getRepository(Message).find();
+  try {
+    const messageRepo = db.getRepository(Message);
+    const messages = await messageRepo.find({
+      order: {
+        createdAt: "ASC"
+      }
+    });
 
-  return res.json(message);
-
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao buscar mensagens" });
+  }
   // TODO
   /**
    * Desenvolva uma lógica eficiente para listar as mensagens contidas no array,
