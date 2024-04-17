@@ -12,8 +12,10 @@ export const wss = new WebSocket.Server({ server });
 require("dotenv").config();
 
 const db = new DataSource({
-  type: "postgres",
+  type: "mongodb",
   url: process.env.DB_URL,
+  database: "chat",
+  useUnifiedTopology: true,
   entities: [Message],
   synchronize: true,
   logging: true,
