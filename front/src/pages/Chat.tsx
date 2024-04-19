@@ -11,7 +11,7 @@ import { chatService } from "../api";
 import { chatActions } from "../store/features/messages";
 import GroupModal from "../components/GroupModal";
 import { SearchInput } from "../components/SerchInput";
-import { CiLocationArrow1 } from "react-icons/ci";
+import { LiaLocationArrowSolid } from "react-icons/lia";
 
 export default function ChatRoom() {
   const [messageText, setMessageText] = useState("");
@@ -78,7 +78,7 @@ export default function ChatRoom() {
 
     socket.addEventListener("message", listener);
     socket.onclose = function () {
-      message.success("Erro ao conectar (onclose)");
+      message.success("Sucesso ao conectar (onclose)");
     };
     socket.onerror = function () {
       message.success("Erro ao conectar (onerror)");
@@ -301,7 +301,7 @@ export default function ChatRoom() {
                   onPressEnter={handleKeyPress}
                 />
                 <button className="btn__message" onClick={handleCreateMessage}>
-                  <CiLocationArrow1 size={24} />
+                  <LiaLocationArrowSolid size={24} />
                 </button>
               </form>
             )}

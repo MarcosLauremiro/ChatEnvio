@@ -15,10 +15,7 @@ const db = new DataSource({
   type: "mongodb",
   url: process.env.DB_URL,
   database: "chat",
-  useUnifiedTopology: true,
   entities: [Message],
-  synchronize: true,
-  logging: true,
 });
 
 db.initialize()
@@ -60,19 +57,11 @@ interface ChatMessageProps {
   createdAt: Date;
   groupId: string;
 }
-const messages: ChatMessageProps[] = [
-  {
-    fromMe: true,
-    senderName: "Ediguinhos",
-    text: "Olá!",
-    createdAt: new Date(),
-    groupId: "1",
-  },
-];
+
 app.get("/message", async (_: Request, res: Response) => {
   try {
     const messageRepo = db.getRepository(Message);
-    const messages = await messageRepo.find({
+    const messages:ChatMessageProps[] = await messageRepo.find({
       order: {
         createdAt: "ASC"
       }
@@ -82,6 +71,7 @@ app.get("/message", async (_: Request, res: Response) => {
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar mensagens" });
   }
+
   // TODO
   /**
    * Desenvolva uma lógica eficiente para listar as mensagens contidas no array,
@@ -89,20 +79,13 @@ app.get("/message", async (_: Request, res: Response) => {
    * Essa implementação proporcionará uma experiência de visualização clara e
    * facilitará a interação com as mensagens disponíveis.
    */
-  // const messageRepo = (Message);
-  // const message = await messageRepo.find({ order: { createdAt: "DESC" } });
 
-  // const sortedMessages = message.sort((a, b) => {
-  //   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  // });
-
-  // return res.json(message);
 });
 
 app.post("/message", async (req: Request, res: Response) => {
   const messageRepo = db.getRepository(Message);
 
-  const body = req.body;
+  const body:ChatMessageProps = req.body;
   const message = messageRepo.create({
     fromMe: true,
     senderName: body.senderName,

@@ -23,7 +23,7 @@ function App() {
       <div className="app-container">
         <div className="app-container__content">
           {isJoinModalOpen && <Join onJoin={handleJoin} />}
-          {userName && <ChatRoom />}
+          {!isJoinModalOpen && <ChatRoom />}
         </div>
       </div>
     </div>

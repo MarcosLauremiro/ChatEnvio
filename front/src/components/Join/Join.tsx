@@ -22,7 +22,7 @@ export default function Join({ onJoin }: JoinProps) {
           type="text"
           placeholder="Enter your name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(value) => setName(value.target.value)}
           required
         />
         <button className="button" type="submit">

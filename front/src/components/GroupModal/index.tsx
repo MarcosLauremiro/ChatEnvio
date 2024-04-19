@@ -31,7 +31,7 @@ export default function GroupModal({
             onClick={() => onSelectGroup(groupId)}
             style={{ margin: "10px" }}
           >
-            {groupNames[Number(groupId) - 1] || groups[Number(groupId)]}
+            {groupNames[Number(groupId) -1] || groups[Number(groupId)]}
           </Button>
         ))}
     </Modal>
