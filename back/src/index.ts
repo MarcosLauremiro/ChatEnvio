@@ -5,6 +5,8 @@ import cors from "cors";
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { Message } from "./entity/Message";
+const swaggerUi = require('swagger-ui-express');
+const swagger = require('./swaggerConfig');
 
 const app = express();
 export const server = http.createServer(app);
@@ -47,6 +49,8 @@ wss.on("connection", (ws) => {
   heartbeat();
 });
 
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swagger));
+
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
@@ -61,10 +65,10 @@ interface ChatMessageProps {
 app.get("/message", async (_: Request, res: Response) => {
   try {
     const messageRepo = db.getRepository(Message);
-    const messages:ChatMessageProps[] = await messageRepo.find({
+    const messages: ChatMessageProps[] = await messageRepo.find({
       order: {
-        createdAt: "ASC"
-      }
+        createdAt: "ASC",
+      },
     });
 
     res.json(messages);
@@ -79,13 +83,12 @@ app.get("/message", async (_: Request, res: Response) => {
    * Essa implementação proporcionará uma experiência de visualização clara e
    * facilitará a interação com as mensagens disponíveis.
    */
-
 });
 
 app.post("/message", async (req: Request, res: Response) => {
   const messageRepo = db.getRepository(Message);
 
-  const body:ChatMessageProps = req.body;
+  const body: ChatMessageProps = req.body;
   const message = messageRepo.create({
     fromMe: true,
     senderName: body.senderName,

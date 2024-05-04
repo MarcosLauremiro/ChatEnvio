@@ -33,7 +33,7 @@ export default function ChatRoom() {
   ]);
   const [isExitConfirmModalOpen, setIsExitConfirmModalOpen] = useState(false);
   const [userGroups, setUserGroups] = useState(["1", "2", "3", "4"]);
-
+ 
   // TODO
   /**
    * Agora, é hora de aprimorar o armazenamento das mensagens! Atualmente,
