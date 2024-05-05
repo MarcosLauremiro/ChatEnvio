@@ -91,6 +91,6 @@ const options = {
   apis: ['./index.js'],
 };
 
-const swaggerSpec = swaggerJSDoc(options);
+const swagger = swaggerJSDoc(options);
 
-module.exports = swaggerSpec;
+module.exports = swagger;
