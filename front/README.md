@@ -110,4 +110,189 @@ export default store;
 ```
 
 `store/routines/messages.ts`
-O arquivo `index.ts` define a configuração inicial da loja do Redux. Ele também define tipos personalizados para uso no aplicativo.
+Este arquivo define a lógica para buscar mensagens do back-end de forma assíncrona e atualizar o estado global da aplicação.
+
+```bash
+export const initialFetchMessages = createAsyncThunk(
+  "chat/initialFetch",
+  async () => {
+    const response = await chatService.getAllMessages();
+    return response;
+  }
+);
+
+export const getMessagesRoutines = (
+  builder: ActionReducerMapBuilder<ChatState>
+) => {
+  builder.addCase(initialFetchMessages.pending, (state) => {
+    state.loading = true;
+  });
+  builder.addCase(initialFetchMessages.fulfilled, (state, action) => {
+    state.loading = false;
+    state.messages = action.payload;
+  });
+  builder.addCase(initialFetchMessages.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.error.message || "";
+  });
+};
+```
+
+### Componentes
+
+`components/ChatMessage`
+Este componente é responsável por exibir uma mensagem individual com a estilização correspondente (enviada ou recebida).
+
+```bash
+import "./styles.scss";
+
+export interface ChatMessageProps {
+  text: string;
+  fromMe: boolean;
+  senderName: string;
+  createdAt?: Date;
+  groupId: string;
+}
+
+export default function ChatMessage({
+  text,
+  fromMe,
+  senderName,
+  createdAt,
+}: ChatMessageProps) {
+  const date = (date?: Date) => {
+    if (!date) {
+      return "";
+    }
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    return `${hours > 9 ? hours : `0${hours}`}:${
+      minutes > 9 ? minutes : `0${minutes}`
+    }`;
+  };
+  return (
+    <div className={`message ${fromMe ? "sent" : "received"}`}>
+      <div className="message__content">
+        <div className="message__content__sender">{senderName}</div>
+        <div className="message__content__text">{text}</div>
+        {createdAt && (
+          <p className="message__content__at">{date(new Date(createdAt))}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+`components/GroupModal`
+Este componente permite que os usuários mudem de grupos ou entrem em outros grupos.
+
+```bash
+import { Modal, Button } from "antd";
+
+interface GroupModalProps {
+  currentGroup: string;
+  onSelectGroup: (groupId: string) => void;
+  onClose: () => void;
+  visible: boolean;
+  groupNames: string[];
+}
+
+const groups = ["1", "2", "3", "4"];
+
+export default function GroupModal({
+  currentGroup,
+  onSelectGroup,
+  onClose,
+  visible,
+  groupNames,
+}: GroupModalProps) {
+  return (
+    <Modal
+      title="Select a group"
+      visible={visible}
+      onCancel={onClose}
+      footer={null}
+    >
+      {groups
+        .filter((groupId) => groupId !== currentGroup)
+        .map((groupId) => (
+          <Button
+            key={groupId}
+            onClick={() => onSelectGroup(groupId)}
+            style={{ margin: "10px" }}
+          >
+            {groupNames[Number(groupId) - 1] || groups[Number(groupId)]}
+          </Button>
+        ))}
+    </Modal>
+  );
+}
+```
+
+`components/Join`
+Este componente mostra um formulário de entrada para que os usuários forneçam seus nomes e entrarem no chat.
+
+```bash
+import { useState } from "react";
+import "./styles.scss";
+
+interface JoinProps {
+  onJoin: (name: string) => void;
+}
+
+export default function Join({ onJoin }: JoinProps) {
+  const [name, setName] = useState("");
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onJoin(name);
+  };
+
+  return (
+    <div className="login__container">
+      <h1 className="title">Join the Chat</h1>
+      <form className="form" onSubmit={handleSubmit}>
+        <input
+          className="input"
+          type="text"
+          placeholder="Enter your name"
+          value={name}
+          onChange={(value) => setName(value.target.value)}
+          required
+        />
+        <button className="button" type="submit">
+          Join
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+`components/SearchInput`
+O componente `SearchInput` é um simples campo de entrada para pesquisar mensagens no chat.
+
+```bash
+import { Input } from "antd";
+
+interface SearchInputProps {
+  searchText: string;
+  setSearchText: (searchText: string) => void;
+}
+
+export const SearchInput = ({
+  searchText,
+  setSearchText,
+}: SearchInputProps) => (
+  <Input
+    type="text"
+    placeholder="Search messages"
+    value={searchText}
+    onChange={(e) => setSearchText(e.target.value)}
+  />
+);
+```
+
+`pages/Chat.tsx`
+Este é o componente da página principal que contém toda a funcionalidade da sala de chat. Ele gerencia mensagens, grupos e WebSockets para comunicação em tempo real.
